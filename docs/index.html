@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+  <title>矩形提取</title>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <!-- <link rel='stylesheet' type='text/css' media='screen' href='./css/style.css'> -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div class="jumbotron">
+      <h1>OpenCV - 矩形提取</h1>
+    </div>
+
+    <div class="row">
+      <div class="col-6">
+        <div class="card">
+          <div class="card-header">
+            原图
+          </div>
+          <div class="card-block text-center">
+            <img id="sourceImage" alt="Upload" class="card-img-top" />
+          </div>
+          <div class="card-footer text-muted">
+            <input type="file" id="sourceInput" name="file" />
+          </div>
+          <button type="button" id="start-extract-button" class="btn btn-primary" disabled>
+            开始提取
+          </button>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="card">
+          <div class="card-header">
+            结果
+          </div>
+          <div class="card-block">
+            <canvas id="imageCanvas"></canvas>
+          </div>
+          <div class="card-footer">
+            <a href="#" id="download-button" class="card-link">下载图片</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let imgSourceElement = document.getElementById("sourceImage");
+    let inputSourceElement = document.getElementById("sourceInput");
+    inputSourceElement.addEventListener("change", e => {
+      imgSourceElement.src = URL.createObjectURL(e.target.files[0]);
+    }, false);
+
+
+    const btnEle = document.getElementById("start-extract-button")
+    btnEle.onclick = function () {
+      this.disabled = true;
+      let sourceMat = cv.imread(imgSourceElement);
+      let resultMat = itemExtract(sourceMat);
+      cv.imshow("imageCanvas", resultMat);
+      this.disabled = false;
+    };
+
+    document.getElementById("download-button").onclick = function () {
+      this.href = document.getElementById("imageCanvas").toDataURL();
+      this.download = "image.png";
+    };
+
+    function onOpenCvReady() {
+      btnEle.disabled = false
+    }
+  </script>
+  <script src="./js/item-extract.js"></script>
+  <script async src='./js/opencv.js' onload="onOpenCvReady();"></script>
+  
+</body>
+
+</html>
