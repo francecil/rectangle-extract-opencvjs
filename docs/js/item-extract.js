@@ -1,11 +1,13 @@
+const g_nLowDifference = 35
+const g_nUpDifference = 35; //负差最大值、正差最大值 
 /**
  * @param {Object} sourceMat
  */
-function itemExtract (sourceMat) {
+function itemExtract (sourceMat, name) {
   let preMat = preProcess(sourceMat)
   let foregroundMat = segmentImage(preMat)
-  let result = detectLine(foregroundMat)
-  return result
+  // let result = detectLine(foregroundMat)
+  cv.imshow(name, foregroundMat);
 }
 /**
  * 预处理
@@ -29,7 +31,7 @@ function resize (src) {
   return smallMat
 }
 /**
- * 保边去噪
+ * 滤波：保边去噪
  * @param {*} mat 
  */
 function filter (src) {
@@ -39,13 +41,21 @@ function filter (src) {
   cv.bilateralFilter(src, dst, 9, 75, 75, cv.BORDER_DEFAULT);
   return dst
 }
+/**
+ * 分割图像
+ * @param {*} src 
+ */
 function segmentImage (src) {
-  let gray = new cv.Mat();
-
-  // gray and threshold image
-  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-  cv.threshold(gray, gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
-  return gray
+  const mask = new cv.Mat(src.rows + 2, src.cols + 2, cv.CV_8U, [0, 0, 0, 0])
+  const seed = new cv.Point(src.cols >> 1, src.rows >> 1)
+  let flags = 4 + (255 << 8) + cv.FLOODFILL_FIXED_RANGE
+  let ccomp = new cv.Rect()
+  let newVal = new cv.Scalar(255, 255, 255)
+  // 选取中点，采用floodFill漫水填充
+  cv.threshold(mask, mask, 1, 128, cv.THRESH_BINARY);
+  cv.floodFill(src, mask, seed, newVal, ccomp, new cv.Scalar(g_nLowDifference, g_nLowDifference, g_nLowDifference),
+    new cv.Scalar(g_nUpDifference, g_nUpDifference, g_nUpDifference), flags);
+  return mask
 }
 /**
  * 提取前景

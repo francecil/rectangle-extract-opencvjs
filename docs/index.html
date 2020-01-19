@@ -61,8 +61,7 @@
     btnEle.onclick = function () {
       this.disabled = true;
       let sourceMat = cv.imread(imgSourceElement);
-      let resultMat = itemExtract(sourceMat);
-      cv.imshow("imageCanvas", resultMat);
+      itemExtract(sourceMat,"imageCanvas");
       this.disabled = false;
     };
 
