@@ -6,8 +6,8 @@ const g_nUpDifference = 35; //负差最大值、正差最大值
 function itemExtract (sourceMat, name) {
   let preMat = preProcess(sourceMat)
   let foregroundMat = segmentImage(preMat)
-  // let result = detectLine(foregroundMat)
-  cv.imshow(name, foregroundMat);
+  let result = detectLine(foregroundMat)
+  cv.imshow(name, result);
 }
 /**
  * 预处理
@@ -53,8 +53,9 @@ function segmentImage (src) {
   let newVal = new cv.Scalar(255, 255, 255)
   // 选取中点，采用floodFill漫水填充
   cv.threshold(mask, mask, 1, 128, cv.THRESH_BINARY);
-  cv.floodFill(src, mask, seed, newVal, ccomp, new cv.Scalar(g_nLowDifference, g_nLowDifference, g_nLowDifference),
-    new cv.Scalar(g_nUpDifference, g_nUpDifference, g_nUpDifference), flags);
+  cv.floodFill(src, mask, seed, newVal, ccomp, new cv.Scalar(g_nLowDifference, g_nLowDifference, g_nLowDifference), new cv.Scalar(g_nUpDifference, g_nUpDifference, g_nUpDifference), flags);
+  // 再次执行一次滤波去除噪点
+  cv.medianBlur(mask, mask, 9);
   return mask
 }
 /**
@@ -85,13 +86,16 @@ function extractForeground (src) {
  * @param {*} mat 
  */
 function detectLine (src) {
-  let dst = cv.Mat.zeros(src.rows, src.cols, cv.CV_8UC3);
+  let dst = new cv.Mat();
+  let tmp = new cv.Mat();
   let lines = new cv.Mat();
   let color = new cv.Scalar(255, 0, 0);
   // Canny 算子进行边缘检测
-  cv.Canny(src, src, 25, 60, 3);
-  // You can try more different parameters
-  cv.HoughLinesP(src, lines, 1, Math.PI / 180, 50, 0, 0);
+  cv.Canny(src, tmp, 25, 60, 3);
+  // 转化边缘检测后的图为灰度图  
+  cv.cvtColor(tmp, dst, cv.COLOR_GRAY2BGR);
+  cv.HoughLines(tmp, lines, 1, Math.PI / 180, 20, 0, 0);
+  console.log(lines)
   // draw lines
   for (let i = 0; i < lines.rows; ++i) {
     let startPoint = new cv.Point(lines.data32S[i * 4], lines.data32S[i * 4 + 1]);
