@@ -22,8 +22,8 @@
           <div class="card-header">
             原图
           </div>
-          <div class="card-block text-center">
-            <img id="sourceImage" alt="Upload" class="card-img-top" />
+          <div class="card-block">
+            <canvas id="canvasInput"></canvas>
           </div>
           <div class="card-footer text-muted">
             <input type="file" id="sourceInput" name="file" />
@@ -40,7 +40,7 @@
             结果
           </div>
           <div class="card-block">
-            <canvas id="imageCanvas"></canvas>
+            <canvas id="canvasOutput"></canvas>
           </div>
           <div class="card-footer">
             <a href="#" id="download-button" class="card-link">下载图片</a>
@@ -50,18 +50,34 @@
     </div>
   </div>
   <script>
-    let imgSourceElement = document.getElementById("sourceImage");
+    function loadImageToCanvas(url, cavansId) {
+      let canvas = document.getElementById(cavansId);
+      let ctx = canvas.getContext('2d');
+      let img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function () {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+      };
+      img.src = url;
+    };
     let inputSourceElement = document.getElementById("sourceInput");
+    const canvasInputId = "canvasInput"
     inputSourceElement.addEventListener("change", e => {
-      imgSourceElement.src = URL.createObjectURL(e.target.files[0]);
+      let files = e.target.files;
+      if (files.length > 0) {
+        let imgUrl = URL.createObjectURL(files[0]);
+        loadImageToCanvas(imgUrl, canvasInputId);
+      }
     }, false);
 
 
     const btnEle = document.getElementById("start-extract-button")
     btnEle.onclick = function () {
       this.disabled = true;
-      let sourceMat = cv.imread(imgSourceElement);
-      itemExtract(sourceMat,"imageCanvas");
+      let sourceMat = cv.imread("canvasInput");
+      itemExtract(sourceMat, "canvasOutput");
       this.disabled = false;
     };
 
@@ -76,7 +92,7 @@
   </script>
   <script src="./js/item-extract.js"></script>
   <script async src='./js/opencv.js' onload="onOpenCvReady();"></script>
-  
+
 </body>
 
 </html>

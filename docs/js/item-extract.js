@@ -1,33 +1,42 @@
 const g_nLowDifference = 35
 const g_nUpDifference = 35; //负差最大值、正差最大值 
 /**
- * @param {Object} sourceMat
+ * @param {Object} srcMat
  */
-function itemExtract (sourceMat, name) {
-  let preMat = preProcess(sourceMat)
-  let foregroundMat = segmentImage(preMat)
-  let result = detectLine(foregroundMat)
+function itemExtract (srcMat, name) {
+  let scale = 1
+  let preMat = preProcess(srcMat, scale)
+  let grayMat = getSegmentImage(preMat)
+  let lines = getLinesWithDetect(grayMat)
+  let points = getIntersections(lines, scale)
+  let result = getResultWithMap(srcMat, points)
   cv.imshow(name, result);
+  preMat.delete()
+  grayMat.delete()
+  srcMat.delete()
+  result.delete()
 }
 /**
  * 预处理
  * @param {*} src 
  */
-function preProcess (src) {
-  let smallMat = resize(src)
-  return filter(smallMat)
+function preProcess (src, scale) {
+  let smallMat = resize(src, scale)
+  let result = filter(smallMat)
+  smallMat.delete()
+  return result
 }
 /**
  * 调整至指定宽高
  * @param {*} src 
- * @param {*} size 
+ * @param {*} scale 缩放比例 
  */
-function resize (src) {
+function resize (src, scale = 1) {
   let smallMat = new cv.Mat();
   let dsize = new cv.Size(0, 0);
   // 缩小一半 
   // TODO 自动按比例缩小到 1k 以内
-  cv.resize(src, smallMat, dsize, 0.5, 0.5, cv.INTER_AREA)
+  cv.resize(src, smallMat, dsize, scale, scale, cv.INTER_AREA)
   return smallMat
 }
 /**
@@ -42,10 +51,10 @@ function filter (src) {
   return dst
 }
 /**
- * 分割图像
+ * 通过分割图像获取前景灰度图
  * @param {*} src 
  */
-function segmentImage (src) {
+function getSegmentImage (src) {
   const mask = new cv.Mat(src.rows + 2, src.cols + 2, cv.CV_8U, [0, 0, 0, 0])
   const seed = new cv.Point(src.cols >> 1, src.rows >> 1)
   let flags = 4 + (255 << 8) + cv.FLOODFILL_FIXED_RANGE
@@ -58,49 +67,64 @@ function segmentImage (src) {
   cv.medianBlur(mask, mask, 9);
   return mask
 }
-/**
- * 提取前景
- * @param {*} src 
- */
-function extractForeground (src) {
-  cv.cvtColor(src, src, cv.COLOR_RGBA2RGB, 0);
-  let mask = new cv.Mat();
-  let bgdModel = new cv.Mat();
-  let fgdModel = new cv.Mat();
-  let rect = new cv.Rect(0, 0, src.cols, src.rows);
-  cv.grabCut(src, mask, rect, bgdModel, fgdModel, 1, cv.GC_INIT_WITH_RECT);
-  // draw foreground
-  for (let i = 0; i < src.rows; i++) {
-    for (let j = 0; j < src.cols; j++) {
-      if (mask.ucharPtr(i, j)[0] == 0 || mask.ucharPtr(i, j)[0] == 2) {
-        src.ucharPtr(i, j)[0] = 0;
-        src.ucharPtr(i, j)[1] = 0;
-        src.ucharPtr(i, j)[2] = 0;
-      }
-    }
+
+
+function getLinesFromData32S (array) {
+  let lines = []
+  let len = array.length / 4
+  for (let i = 0; i < len; ++i) {
+    let startPoint = new cv.Point(array[i * 4], array[i * 4 + 1]);
+    let endPoint = new cv.Point(array[i * 4 + 2], array[i * 4 + 3]);
+    lines.push({
+      startPoint,
+      endPoint
+    })
   }
-  return src
+  return lines
 }
 /**
  * 直线检测
  * @param {*} mat 
  */
-function detectLine (src) {
+function getLinesWithDetect (src) {
   let dst = new cv.Mat();
   let tmp = new cv.Mat();
-  let lines = new cv.Mat();
-  let color = new cv.Scalar(255, 0, 0);
+  let linesMat = new cv.Mat();
   // Canny 算子进行边缘检测
   cv.Canny(src, tmp, 25, 60, 3);
   // 转化边缘检测后的图为灰度图  
   cv.cvtColor(tmp, dst, cv.COLOR_GRAY2BGR);
-  cv.HoughLines(tmp, lines, 1, Math.PI / 180, 20, 0, 0);
-  console.log(lines)
-  // draw lines
-  for (let i = 0; i < lines.rows; ++i) {
-    let startPoint = new cv.Point(lines.data32S[i * 4], lines.data32S[i * 4 + 1]);
-    let endPoint = new cv.Point(lines.data32S[i * 4 + 2], lines.data32S[i * 4 + 3]);
-    cv.line(dst, startPoint, endPoint, color);
-  }
+  cv.HoughLines(tmp, linesMat, 1, Math.PI / 180, 20, 0, 0);
+  let lines = getLinesFromData32S(linesMat.data32S)
+  linesMat.delete()
+  dst.delete()
+  tmp.delete()
+  return lines
+}
+/**
+ * 计算交点
+ * @param {*} lines 
+ */
+function getIntersections (lines) {
+  let points = []
+  points.push(new cv.Point(10, 10))
+  points.push(new cv.Point(100, 10))
+  points.push(new cv.Point(10, 100))
+  points.push(new cv.Point(100, 100))
+  return points
+}
+/**
+ * 抠图，映射
+ * @param {*} src 
+ * @param {*} points 
+ */
+function getResultWithMap (src, points) {
+  let dst = new cv.Mat();
+  let dsize = new cv.Size(0, 0);
+  let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [157.6, 71.5, 295.6, 118.4, 172.4, 311.3, 2.4, 202.4]);
+  let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, 300, 0, 300, 400, 0, 400]);
+  let M = cv.getPerspectiveTransform(srcTri, dstTri);
+  cv.warpPerspective(src, dst, M, dsize);
+  M.delete(); srcTri.delete(); dstTri.delete();
   return dst
 }
