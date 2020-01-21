@@ -6,8 +6,8 @@
 
 ## 在线地址
 
-[rectangle-extract-opencv](https://francecil.github.io/rectangle-extract-opencvjs/)
+[rectangle-extract-opencvjs](https://francecil.github.io/rectangle-extract-opencvjs/)
 
 ## 实现思路
 
-详见 [基于 opencv.js 实现图像内矩形物品的自动提取]()
+详见 [基于 opencv.js 实现图像内矩形物品的自动提取](https://juejin.im/post/5e268bd86fb9a0300d61a0c7)
