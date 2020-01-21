@@ -91,8 +91,8 @@
     };
 
     document.getElementById("download-button").onclick = function () {
-      this.href = document.getElementById("canvasOutput").toDataURL();
-      this.download = "image.png";
+      this.href = document.getElementById("canvasOutput").toDataURL("image/png");
+      this.download = "result.png";
     };
 
     function onOpenCvReady() {

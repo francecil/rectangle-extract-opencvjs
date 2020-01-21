@@ -197,8 +197,8 @@ function getClusterPoints (points, { width, height }) {
   // 除去量最少的，仅保留四个聚类
   clusters = clusters.sort((c1, c2) => c2.length - c1.length).slice(0, 4)
   const result = clusters.map(cluster => {
-    const x = ~~ (cluster.reduce((sum, cur) => sum + cur.x, 0) / cluster.length)
-    const y = ~~ (cluster.reduce((sum, cur) => sum + cur.y, 0) / cluster.length)
+    const x = ~~(cluster.reduce((sum, cur) => sum + cur.x, 0) / cluster.length)
+    const y = ~~(cluster.reduce((sum, cur) => sum + cur.y, 0) / cluster.length)
     return { x, y }
   })
   return result
@@ -207,16 +207,16 @@ function getClusterPoints (points, { width, height }) {
  * 顺时针排序，以中心点左上角为第一个点
  * @param {*} points 
  */
-function getSortedVertex(points){
+function getSortedVertex (points) {
   let center = {
-    x:points.reduce((sum,p)=>sum+p.x,0)/4,
-    y:points.reduce((sum,p)=>sum+p.y,0)/4
+    x: points.reduce((sum, p) => sum + p.x, 0) / 4,
+    y: points.reduce((sum, p) => sum + p.y, 0) / 4
   }
   let sortedPoints = []
-  sortedPoints.push(points.find(p=>p.x<center.x&&p.y<center.y))
-  sortedPoints.push(points.find(p=>p.x>center.x&&p.y<center.y))
-  sortedPoints.push(points.find(p=>p.x>center.x&&p.y>center.y))
-  sortedPoints.push(points.find(p=>p.x<center.x&&p.y>center.y))
+  sortedPoints.push(points.find(p => p.x < center.x && p.y < center.y))
+  sortedPoints.push(points.find(p => p.x > center.x && p.y < center.y))
+  sortedPoints.push(points.find(p => p.x > center.x && p.y > center.y))
+  sortedPoints.push(points.find(p => p.x < center.x && p.y > center.y))
   return sortedPoints
 }
 
@@ -243,7 +243,7 @@ function getResultWithMap (src, points) {
     array.push(point.x)
     array.push(point.y)
   })
-  console.log(points,array)
+  console.log(points, array)
   let dst = new cv.Mat();
   let dsize = new cv.Size(0, 0);
   let dstWidth = src.cols
@@ -252,8 +252,9 @@ function getResultWithMap (src, points) {
   let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, dstWidth, 0, dstWidth, dstHeight, 0, dstHeight]);
   let M = cv.getPerspectiveTransform(srcTri, dstTri);
   cv.warpPerspective(src, dst, M, dsize);
-  M.delete(); srcTri.delete(); dstTri.delete();
-  return dst
+  let resizeDst = resize(dst, 0.5)
+  M.delete(); srcTri.delete(); dstTri.delete(); dst.delete()
+  return resizeDst
 }
 function drawLineMat (rows, cols, lines) {
   let dst = cv.Mat.zeros(rows, cols, cv.CV_8UC3);
