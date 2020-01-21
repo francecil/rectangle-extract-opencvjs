@@ -177,15 +177,22 @@ function getAllIntersections (lines) {
  * @param {*} param1 
  */
 function getClusterPoints (points, { width, height }) {
-  points.sort((p1, p2) => {
-    if (p1.x !== p2.x) {
-      return p1.x - p2.x
-    } else {
-      return p1.y - p2.y
-    }
+  const DISTANCE = Math.max(40, (width + height) / 20)
+  const isNear = (p1, p2) => Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y) < DISTANCE
+  // 多边形中心点坐标
+  const center = {
+    x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
+    y: points.reduce((sum, p) => sum + p.y, 0) / points.length
+  }
+  points.sort((p1,p2)=>{
+    // y=kx theta = atan(k)
+    // TODO cache calc
+    const theta1 = Math.atan((p1.y-center.y)/((p1.x-center.x) || 0.01))
+    const theta2 = Math.atan((p2.y-center.y)/((p2.x-center.x) || 0.01))
+    return theta1 - theta2
   })
-  const distance = Math.max(40, (width + height) / 20)
-  const isNear = (p1, p2) => Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y) < distance
+  
+  
   let clusters = [[points[0]]]
   for (let i = 1; i < points.length; i++) {
     if (isNear(points[i], points[i - 1])) {
@@ -243,7 +250,7 @@ function getResultWithMap (src, points) {
     array.push(point.x)
     array.push(point.y)
   })
-  console.log(points, array)
+  // console.log(points, array)
   let dst = new cv.Mat();
   let dsize = new cv.Size(0, 0);
   let dstWidth = src.cols
