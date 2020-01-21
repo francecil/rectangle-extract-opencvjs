@@ -9,8 +9,8 @@
   <!-- <link rel='stylesheet' type='text/css' media='screen' href='./css/style.css'> -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" />
   <style>
-    canvas {
-      width:100%;
+    .card-block>canvas {
+      width: 100%;
     }
   </style>
 </head>
@@ -44,7 +44,7 @@
           <div class="card-header">
             结果
           </div>
-          <div class="card-block">
+          <div class="card-block text-center">
             <canvas id="canvasOutput"></canvas>
           </div>
           <div class="card-footer">
@@ -81,13 +81,17 @@
     const btnEle = document.getElementById("start-extract-button")
     btnEle.onclick = function () {
       this.disabled = true;
-      let sourceMat = cv.imread("canvasInput");
-      itemExtract(sourceMat, "canvasOutput");
+      try {
+        let sourceMat = cv.imread("canvasInput");
+        itemExtract(sourceMat, "canvasOutput");
+      } catch (error) {
+        console.error(error)
+      }
       this.disabled = false;
     };
 
     document.getElementById("download-button").onclick = function () {
-      this.href = document.getElementById("imageCanvas").toDataURL();
+      this.href = document.getElementById("canvasOutput").toDataURL();
       this.download = "image.png";
     };
 
